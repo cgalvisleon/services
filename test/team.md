@@ -1,1 +1,1 @@
-Nombre II: Juan Camilo Palacios
+Juan Camilo Palacios
