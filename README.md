@@ -47,5 +47,7 @@ Connection failed: The connection attempt failed. (jdbc:postgresql://local
 ## Description
 
 ```
-Git backup
+git backup
+git update
+git new <name a brach>
 ```
