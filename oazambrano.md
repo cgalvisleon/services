@@ -1,3 +1,4 @@
-Omar Zambrano
-39
-Leer
+Name:Omar Zambrano
+Age:39
+Main-Hobby:Leer
+Ocasional-Hobby:Dota 2
