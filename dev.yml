@@ -1,0 +1,163 @@
+networks:
+  proxy:
+
+services:
+  redis:
+    image: redis:7.2.4
+    container_name: redis
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    restart: always
+    command: redis-server --port 6379 --requirepass test
+    networks:
+      - proxy
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    volumes:
+      - ./dbdata/redis:/var/lib/redis
+      - ./dbdata/redis.conf:/usr/local/etc/redis/redis.conf
+
+  nats:
+    image: "nats-streaming:0.9.2"
+    container_name: nats
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    restart: always
+    networks:
+      - proxy
+    ports:
+      - 4222:4222
+    volumes:
+      - ./dbdata/nats:/datastore
+
+  mongo:
+    image: mongo
+    container_name: mongodb
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: test
+      MONGO_INITDB_ROOT_PASSWORD: test
+
+  postgres-master:
+    image: postgres:15
+    container_name: postgres-master
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "2560M"
+    networks:
+      - proxy
+    ports:
+      - 5432:5432
+    environment:
+      - "POSTGRES_USER=test"
+      - "POSTGRES_PASSWORD=test"
+      - "POSTGRES_DB=test"
+      - "PGDATA=/var/lib/postgresql/data/pgdata"
+      - "POSTGRES_INITDB_WALDIR=/var/lib/postgresql/data/pgwal"
+      - "TZ=America/Bogota"
+    volumes:
+      - ./dbdata/postgres/master:/var/lib/postgresql/data
+      - ./dbdata/backups:/usr/src/backups
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+
+  postgres-node1:
+    image: postgres:15
+    container_name: postgres-node1
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "2560M"
+    networks:
+      - proxy
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+    volumes:
+      - ./dbdata/postgres/node1:/var/lib/postgresql/data
+      - ./dbdata/backups:/usr/src/backups
+
+  haproxy:
+    image: haproxy:latest
+    container_name: haproxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    ports:
+      - "5435:5435"
+    networks:
+      - proxy
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+
+  pgadmin:
+    image: dpage/pgadmin4:7.3
+    container_name: pgadmin
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    networks:
+      - proxy
+    ports:
+      - 5400:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: test@celsia.com
+      PGADMIN_DEFAULT_PASSWORD: test
+    volumes:
+      - ./dbdata/pgadmin:/var/lib/pgadmin
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    container_name: elasticsearch
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    restart: always
+    networks:
+      - proxy
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - ./dbdata/elasticsearch:/usr/share/elasticsearch/data

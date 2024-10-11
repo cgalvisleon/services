@@ -1,0 +1,27 @@
+services:
+  redis:
+    image: redis
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    command: redis-server --requirepass Eoxj5h3^UN
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    volumes:
+      - ./redis/data:/data
+
+  nats:
+    image: "nats-streaming:0.9.2"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+    ports:
+      - 4222:4222
+    volumes:
+      - ./nats/data:/datastore
